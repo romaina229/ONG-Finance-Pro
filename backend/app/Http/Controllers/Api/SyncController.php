@@ -5,18 +5,28 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\Sync\SyncAuthorization;
 use App\Services\Sync\SyncEngine;
 use App\Services\Sync\SyncOperation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 final class SyncController extends Controller
 {
-    public function __construct(private readonly SyncEngine $engine) {}
+    public function __construct(
+        private readonly SyncEngine $engine,
+        private readonly SyncAuthorization $authorization,
+    ) {}
 
     public function push(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user === null) {
+            throw new UnauthorizedHttpException('Bearer', 'Authentication is required.');
+        }
+
         $data = $request->validate([
             'operations' => ['required','array','min:1','max:100'],
             'operations.*.operation_id' => ['required','uuid'],
@@ -33,11 +43,16 @@ final class SyncController extends Controller
 
         $results = [];
         foreach ($data['operations'] as $item) {
+            $this->authorization->assertAuthorized($user, $item['organization_id'], $item['device_id']);
+            if ((string) $user->getAuthIdentifier() !== $item['user_id']) {
+                abort(403, 'The operation user does not match the authenticated user.');
+            }
+
             $results[] = $this->engine->push(new SyncOperation(
                 operationId: $item['operation_id'],
                 organizationId: $item['organization_id'],
                 deviceId: $item['device_id'],
-                userId: $item['user_id'],
+                userId: (string) $user->getAuthIdentifier(),
                 entityType: $item['entity_type'],
                 localId: $item['local_id'],
                 operation: $item['operation'],
@@ -52,12 +67,19 @@ final class SyncController extends Controller
 
     public function pull(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user === null) {
+            throw new UnauthorizedHttpException('Bearer', 'Authentication is required.');
+        }
+
         $data = $request->validate([
             'organization_id' => ['required','uuid'],
             'device_id' => ['required','uuid'],
             'cursor' => ['nullable','integer','min:0'],
             'limit' => ['nullable','integer','min:1','max:500'],
         ]);
+
+        $this->authorization->assertAuthorized($user, $data['organization_id'], $data['device_id']);
 
         $cursor = (int) ($data['cursor'] ?? 0);
         $limit = (int) ($data['limit'] ?? 200);

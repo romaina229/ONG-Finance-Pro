@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -15,10 +17,10 @@ class SyncController extends Controller
         $data = $request->validate([
             'operations' => ['required', 'array', 'min:1'],
             'operations.*.operation_id' => ['required', 'uuid'],
-            'operations.*.organization_id' => ['required', 'uuid'],
+            'operations.*.organization_id' => ['required', 'integer', 'exists:organizations,id'],
             'operations.*.entity_type' => ['required', 'string', 'max:100'],
             'operations.*.local_id' => ['required', 'uuid'],
-            'operations.*.server_id' => ['nullable', 'uuid'],
+            'operations.*.server_id' => ['nullable', 'integer', 'min:1'],
             'operations.*.action' => ['required', 'in:create,update,delete'],
             'operations.*.base_version' => ['nullable', 'integer', 'min:0'],
             'operations.*.payload' => ['required', 'array'],
@@ -26,7 +28,7 @@ class SyncController extends Controller
 
         $accepted = [];
 
-        DB::transaction(function () use ($data, &$accepted) {
+        DB::transaction(function () use ($data, &$accepted): void {
             foreach ($data['operations'] as $item) {
                 $operation = SyncOperation::firstOrCreate(
                     ['operation_id' => $item['operation_id']],
@@ -54,18 +56,18 @@ class SyncController extends Controller
 
     public function pull(Request $request): JsonResponse
     {
-        $organizationId = $request->validate([
-            'organization_id' => ['required', 'uuid'],
+        $data = $request->validate([
+            'organization_id' => ['required', 'integer', 'exists:organizations,id'],
             'after_id' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $query = SyncOperation::query()
-            ->where('organization_id', $organizationId['organization_id'])
+            ->where('organization_id', $data['organization_id'])
             ->where('status', 'accepted')
             ->orderBy('id');
 
-        if (!empty($organizationId['after_id'])) {
-            $query->where('id', '>', $organizationId['after_id']);
+        if (isset($data['after_id'])) {
+            $query->where('id', '>', $data['after_id']);
         }
 
         return response()->json(['data' => $query->limit(100)->get()]);

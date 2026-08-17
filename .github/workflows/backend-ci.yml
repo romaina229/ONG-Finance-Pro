@@ -1,0 +1,71 @@
+name: Finance Pro Backend CI
+
+on:
+  push:
+    branches: [main, foundation/offline-sync]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-validation:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: finance_pro
+          POSTGRES_USER: finance
+          POSTGRES_PASSWORD: finance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U finance -d finance_pro"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: finance_pro
+      DB_USERNAME: finance
+      DB_PASSWORD: finance
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql
+          coverage: none
+
+      - name: Composer validate
+        run: composer validate --no-check-publish --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: PHP syntax check
+        run: |
+          find app config database routes tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Prepare Laravel environment
+        run: |
+          if [ -f .env.example ]; then cp .env.example .env; else touch .env; fi
+          php artisan key:generate --force
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --testdox
+
+      - name: PostgreSQL concurrency smoke test
+        run: |
+          php -r '$pdo=new PDO("pgsql:host=127.0.0.1;port=5432;dbname=finance_pro", "finance", "finance"); $pdo->query("SELECT 1"); echo "PostgreSQL connection OK\n";'

@@ -57,7 +57,7 @@ class SyncControllerTest extends TestCase
             'action' => 'update',
             'base_version' => 1,
             'payload' => ['label' => 'Modification offline'],
-        ]]));
+        ]]]);
 
         $response->assertOk()
             ->assertJsonPath('data.0.status', 'conflict')
@@ -87,7 +87,9 @@ class SyncControllerTest extends TestCase
             'action' => 'delete',
             'base_version' => 1,
             'payload' => [],
-        ]]])->assertOk()->assertJsonPath('data.0.status', 'accepted');
+        ]]])
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'accepted');
 
         $this->assertDatabaseHas('financial_transactions', [
             'id' => $transaction->id,

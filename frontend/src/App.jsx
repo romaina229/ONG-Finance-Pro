@@ -4,6 +4,7 @@ import { projects, budgets } from './data/projects';
 import { expenses, revenues } from './data/transactions';
 import { reportSummary, reportLines } from './data/reports';
 import AccountingPage from './pages/AccountingPage';
+import BudgetControlPage from './pages/BudgetControlPage';
 
 const navigation=[['Tableau de bord','dashboard'],['Organisations','organizations'],['Utilisateurs & rôles','access'],['Projets & budgets','projects'],['Dépenses','expenses'],['Recettes','revenues'],['Comptabilité','accounting'],['Rapports','reports']];
 const stats=[{label:'Solde disponible',value:'48 250 000 FCFA',trend:'+8,4 %'},{label:'Dépenses du mois',value:'12 480 000 FCFA',trend:'+3,1 %'},{label:'Recettes du mois',value:'18 760 000 FCFA',trend:'+11,7 %'},{label:'Opérations en attente',value:'24',trend:'À traiter'}];

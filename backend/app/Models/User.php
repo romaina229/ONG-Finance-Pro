@@ -7,10 +7,11 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasApiTokens, Notifiable;
 
     protected $fillable = ['name', 'email', 'password'];
 
@@ -37,6 +38,8 @@ class User extends Authenticatable
 
     public function hasPermission(string $permission): bool
     {
-        return $this->roles()->whereHas('permissions', fn ($query) => $query->where('slug', $permission))->exists();
+        return $this->roles()
+            ->whereHas('permissions', fn ($query) => $query->where('slug', $permission))
+            ->exists();
     }
 }

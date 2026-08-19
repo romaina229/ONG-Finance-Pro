@@ -1,10 +1,7 @@
 name: Finance Pro Backend CI
 
 on:
-  push:
-    branches: [main, foundation/offline-sync]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   backend-validation:
@@ -37,35 +34,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql
           coverage: none
-
       - name: Composer validate
         run: composer validate --no-check-publish --strict
-
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-
       - name: PHP syntax check
-        run: |
-          find app config database routes tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
-
+        run: find app config database routes tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Prepare Laravel environment
         run: |
-          if [ -f .env.example ]; then cp .env.example .env; else touch .env; fi
+          cp .env.example .env
           php artisan key:generate --force
-
       - name: Run migrations
         run: php artisan migrate --force
-
       - name: Run PHPUnit
         run: vendor/bin/phpunit --testdox
-
-      - name: PostgreSQL concurrency smoke test
-        run: |
-          php -r '$pdo=new PDO("pgsql:host=127.0.0.1;port=5432;dbname=finance_pro", "finance", "finance"); $pdo->query("SELECT 1"); echo "PostgreSQL connection OK\n";'

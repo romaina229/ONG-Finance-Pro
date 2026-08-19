@@ -9,7 +9,18 @@ Plateforme de gestion financière et comptable destinée aux ONG et organisation
 - Base locale : SQLite pour démarrer rapidement.
 - Production : PostgreSQL ou MySQL selon l'infrastructure.
 
-## Démarrage du backend
+## Démarrage du backend — Windows PowerShell
+
+```powershell
+cd backend
+composer install
+Copy-Item .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
+
+## Démarrage du backend — macOS / Linux
 
 ```bash
 cd backend
@@ -20,10 +31,7 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-Compte de démonstration :
-
-- E-mail : `admin@financepro.local`
-- Mot de passe : `Password!123`
+Compte de démonstration : `admin@financepro.local` / `Password!123`.
 
 API : `http://127.0.0.1:8000/api`
 
@@ -40,6 +48,8 @@ cp .env.example .env
 npm run dev
 ```
 
+Sous PowerShell, remplacez `cp` par `Copy-Item .env.example .env`.
+
 Interface : `http://localhost:5173`
 
 ## Modules
@@ -55,11 +65,12 @@ Interface : `http://localhost:5173`
 - Journal comptable
 - Rapports financiers
 - Synchronisation offline avec gestion des versions et conflits
+- Gestion documentaire prête pour le stockage local/public
 
-## Flux financier cible
+## Flux financier
 
 `Financement → Recette → Rapprochement → Comptabilité → Reporting`
 
 `Projet → Budget → Demande de dépense → Contrôle → Approbation → Comptabilité`
 
-Le workflow CI est conservé en mode manuel pendant la phase de construction. Il pourra être lancé explicitement une fois la plateforme stabilisée.
+Le workflow CI est conservé en mode manuel pendant la phase de construction et sera lancé explicitement après stabilisation.

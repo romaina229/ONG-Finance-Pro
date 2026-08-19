@@ -14,33 +14,23 @@ class AuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        $user = User::where('email', $credentials['email'])->first();
-
+        $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
+        $user = User::with('organizations')->where('email', $credentials['email'])->first();
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials.'], 422);
+            return response()->json(['message' => 'Identifiants invalides.'], 422);
         }
-
         $token = $user->createToken('finance-pro')->plainTextToken;
-
-        return response()->json([
-            'token' => $token,
-            'user' => $user,
-        ]);
+        return response()->json(['token' => $token, 'user' => $user, 'organizations' => $user->organizations]);
     }
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json(['user' => $request->user()]);
+        return response()->json(['user' => $request->user()->load('organizations')]);
     }
 
     public function logout(Request $request): JsonResponse
     {
         $request->user()?->currentAccessToken()?->delete();
-        return response()->json(['message' => 'Logged out.']);
+        return response()->json(['message' => 'Déconnexion réussie.']);
     }
 }

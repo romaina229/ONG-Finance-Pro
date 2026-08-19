@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { dashboardSummary } from '../api/client';
 import { projects as fallbackProjects } from '../data/projects';

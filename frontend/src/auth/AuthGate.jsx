@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import React from 'react';
 import { currentUser, login, ORG_KEY, TOKEN_KEY } from '../api/client';
 
 export default function AuthGate({ children }) {

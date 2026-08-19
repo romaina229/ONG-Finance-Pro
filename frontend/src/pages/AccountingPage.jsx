@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { listTransactions } from '../api/client';
 const fallback=[['OD-2026-001','Subvention Global Fund','701100','+ 4 500 000 FCFA','Validée'],['OD-2026-002','Achat fournitures','601200','− 245 000 FCFA','Validée'],['OD-2026-003','Frais de mission','625100','− 480 000 FCFA','À valider'],['OD-2026-004','Frais bancaires','627100','− 35 500 FCFA','Validée']];

@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMemo, useState } from 'react';
 import { logout, TOKEN_KEY } from './api/client';
 import DashboardPage from './pages/DashboardPage';

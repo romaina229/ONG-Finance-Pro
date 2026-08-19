@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { listBudgets } from '../api/client';
 import { budgets as fallback } from '../data/projects';

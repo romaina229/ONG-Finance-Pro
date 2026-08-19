@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { listTransactions, reconcileTransaction } from '../api/client';
 const fallback=[{id:'REC-2026-001',reference:'REC-2026-001',date:'16/08/2026',label:'Subvention reçue',source:'Global Fund',project:'PROJ-2026-001',amount:4500000,tranche:'Tranche 1',workflow_status:'reconciled',document_url:'Avis-credit-GF.pdf'},{id:'REC-2026-002',reference:'REC-2026-002',date:'12/08/2026',label:'Financement programme',source:'UNFPA',project:'PROJ-2026-002',amount:3200000,tranche:'Décaissement initial',workflow_status:'submitted',document_url:'Avis-credit-UNFPA.pdf'},{id:'REC-2026-003',reference:'REC-2026-003',date:'10/08/2026',label:'Contribution propre',source:'Fonds propre',project:'PROJ-2026-003',amount:900000,tranche:'Contribution',workflow_status:'draft',document_url:null}];

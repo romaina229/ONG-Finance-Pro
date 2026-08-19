@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\BudgetLine;
 use App\Models\Organization;
+use App\Models\Permission;
 use App\Models\Project;
 use App\Models\Role;
 use App\Models\User;
@@ -40,6 +41,8 @@ class FinancialApiTest extends TestCase
     {
         $organization = Organization::create(['name' => 'Test ONG', 'code' => 'API-'.substr(md5((string) microtime(true)), 0, 8)]);
         $role = Role::create(['name' => 'Test API', 'slug' => 'api-'.substr(md5((string) microtime(true)), 0, 10)]);
+        $permissions = collect(['dashboard.view', 'projects.manage', 'budgets.manage', 'transactions.create', 'transactions.approve', 'transactions.reconcile', 'reports.view'])->map(fn ($slug) => Permission::create(['name' => $slug, 'slug' => $slug]));
+        $role->permissions()->sync($permissions->pluck('id')->all());
         $user = User::create(['name' => 'API User', 'email' => uniqid('api-', true).'@finance-pro.local', 'password' => 'Password!123']);
         $user->organizations()->attach($organization->id, ['role_id' => $role->id]);
         return [$user, $organization];

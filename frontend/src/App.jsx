@@ -1,21 +1,70 @@
-import { useState } from 'react';
-import { organizations, roles, users } from './data/organizations';
-import { projects, budgets } from './data/projects';
-import { expenses, revenues } from './data/transactions';
-import { reportSummary, reportLines } from './data/reports';
-import AccountingPage from './pages/AccountingPage';
-import BudgetControlPage from './pages/BudgetControlPage';
+import { useMemo, useState } from 'react';
+import { logout, TOKEN_KEY } from './api/client';
+import DashboardPage from './pages/DashboardPage';
+import AdministrationPage from './pages/AdministrationPage';
+import ProjectsPage from './pages/ProjectsPage';
 import ExpenseWorkflowPage from './pages/ExpenseWorkflowPage';
 import RevenueWorkflowPage from './pages/RevenueWorkflowPage';
+import BudgetControlPage from './pages/BudgetControlPage';
+import AccountingPage from './pages/AccountingPage';
+import ReportsPage from './pages/ReportsPage';
 
-const navigation=[['Tableau de bord','dashboard'],['Organisations','organizations'],['Utilisateurs & rôles','access'],['Projets & budgets','projects'],['Dépenses','expenses'],['Recettes','revenues'],['Contrôle budgétaire','budget-control'],['Comptabilité','accounting'],['Rapports','reports']];
-const stats=[{label:'Solde disponible',value:'48 250 000 FCFA',trend:'+8,4 %'},{label:'Dépenses du mois',value:'12 480 000 FCFA',trend:'+3,1 %'},{label:'Recettes du mois',value:'18 760 000 FCFA',trend:'+11,7 %'},{label:'Opérations en attente',value:'24',trend:'À traiter'}];
-const money=n=>new Intl.NumberFormat('fr-FR').format(n)+' FCFA';
-function Stat({label,value,note}){return <article className="stat-card"><span>{label}</span><strong>{value}</strong><small>{note}</small></article>}
-function ReportsPage(){const execution=Math.round((reportSummary.expenses/reportSummary.budget)*100);return <section className="content"><div className="hero"><div><span className="eyebrow">ANALYSE FINANCIÈRE</span><h2>Rapports</h2><p>Une vue consolidée de l'exécution financière et des budgets.</p></div><button className="primary">Exporter le rapport</button></div><div className="stats-grid"><Stat label="Recettes" value={money(reportSummary.income)} note="période 2026"/><Stat label="Dépenses" value={money(reportSummary.expenses)} note="période 2026"/><Stat label="Solde" value={money(reportSummary.balance)} note="disponible"/><Stat label="Exécution budgétaire" value={`${execution} %`} note="dépenses / budget"/></div><div className="grid-two"><section className="panel"><div className="panel-head"><div><span className="eyebrow">EXÉCUTION</span><h3>Budget par projet</h3></div><span className="period">2026</span></div><div className="operation-list">{reportLines.map(line=>{const pct=Math.round(line.spent/line.budget*100);return <div key={line.label}><span className="operation-icon revenue-icon">%</span><div><strong>{line.label}</strong><small>{money(line.spent)} consommés sur {money(line.budget)}</small><div className="progress"><span style={{width:`${pct}%`}}/></div></div><b>{pct}%</b></div>})}</div></section><section className="panel"><div className="panel-head"><div><span className="eyebrow">SYNTHÈSE</span><h3>Indicateurs</h3></div></div><div className="operation-list"><div><span className="operation-icon revenue-icon">+</span><div><strong>Entrées financières</strong><small>Recettes enregistrées sur la période</small></div><b>{money(reportSummary.income)}</b></div><div><span className="operation-icon expense-icon">−</span><div><strong>Sorties financières</strong><small>Dépenses enregistrées sur la période</small></div><b>{money(reportSummary.expenses)}</b></div><div><span className="operation-icon revenue-icon">=</span><div><strong>Budget restant</strong><small>Après consommation des dépenses</small></div><b>{money(reportSummary.budget-reportSummary.expenses)}</b></div></div></section></div></section>}
-function TransactionsPage({mode}){const isExpense=mode==='expenses',items=isExpense?expenses:revenues,total=items.reduce((s,x)=>s+x.amount,0);if(isExpense)return <ExpenseWorkflowPage/>;return <RevenueWorkflowPage/>}
-function ProjectsPage(){return <section className="content"><div className="hero"><div><span className="eyebrow">PROGRAMMES</span><h2>Projets & budgets</h2><p>Suivez les financements, allocations et consommations par projet.</p></div><button className="primary">+ Nouveau projet</button></div><div className="stats-grid"><Stat label="Projets" value={projects.length} note="référencés"/><Stat label="Budgets" value={budgets.length} note="lignes budgétaires"/><Stat label="Budget total" value="52 M" note="FCFA planifiés"/><Stat label="Consommé" value="20,95 M" note="FCFA engagés"/></div><div className="grid-two"><section className="panel"><div className="panel-head"><div><span className="eyebrow">PORTEFEUILLE</span><h3>Projets</h3></div></div><div className="operation-list">{projects.map(p=><div key={p.id}><span className="operation-icon revenue-icon">P</span><div><strong>{p.name}</strong><small>{p.code} · {p.donor} · {Math.round(p.spent/p.budget*100)}% consommé</small></div><b>{(p.budget/1000000).toFixed(1)} M FCFA</b></div>)}</div></section><section className="panel"><div className="panel-head"><div><span className="eyebrow">BUDGET</span><h3>Principales allocations</h3></div></div><div className="operation-list">{budgets.map(b=><div key={b.id}><span className="operation-icon">B</span><div><strong>{b.category}</strong><small>{b.project}</small></div><b>{(b.consumed/1000000).toFixed(1)} / {(b.allocated/1000000).toFixed(1)} M</b></div>)}</div></section></div></section>}
-function ManagementPage({mode}){const isAccess=mode==='access';return <section className="content"><div className="hero"><div><span className="eyebrow">ADMINISTRATION</span><h2>{isAccess?'Utilisateurs, rôles et permissions':'Organisations'}</h2><p>{isAccess?'Contrôlez les accès à Finance Pro avec des rôles explicites.':'Gérez les organisations et leur contexte financier.'}</p></div><button className="primary">+ {isAccess?'Inviter un utilisateur':'Nouvelle organisation'}</button></div><div className="stats-grid">{isAccess?<><Stat label="Utilisateurs" value={users.length} note="comptes configurés"/><Stat label="Rôles" value={roles.length} note="profils disponibles"/><Stat label="Actifs" value={users.filter(u=>u.status==='active').length} note="accès actifs"/><Stat label="En attente" value={users.filter(u=>u.status==='pending').length} note="invitations"/></>:<><Stat label="Organisations" value={organizations.length} note="référencées localement"/><Stat label="Actives" value={organizations.filter(o=>o.status==='active').length} note="espaces disponibles"/><Stat label="Devise" value="XOF" note="référentiel actuel"/><Stat label="Exercice" value="2026" note="année fiscale active"/></>}</div><div className="grid-two"><section className="panel"><div className="panel-head"><div><span className="eyebrow">LISTE</span><h3>{isAccess?'Utilisateurs':'Organisations enregistrées'}</h3></div></div><div className="operation-list">{(isAccess?users:organizations).map(item=><div key={item.id}><span className="operation-icon">{isAccess?item.name.charAt(0):'O'}</span><div><strong>{item.name}</strong><small>{isAccess?`${item.email} · ${item.role}`:`${item.code} · ${item.country} · ${item.currency}`}</small></div><b>{isAccess?(item.status==='active'?'Actif':'En attente'):'Active'}</b></div>)}</div></section><section className="panel"><div className="panel-head"><div><span className="eyebrow">CONTRÔLE</span><h3>{isAccess?'Rôles disponibles':'Paramètres actifs'}</h3></div></div><div className="operation-list">{isAccess?roles.map(r=><div key={r.id}><span className="operation-icon revenue-icon">R</span><div><strong>{r.name}</strong><small>{r.description}</small></div><b>{r.permissions} droits</b></div>):<div><span className="operation-icon revenue-icon">✓</span><div><strong>Isolation organisationnelle</strong><small>Chaque espace possède son propre contexte financier.</small></div></div>}</div></section></div></section>}
-function Dashboard(){return <section className="content"><div className="hero"><div><span className="eyebrow">VUE FINANCIÈRE</span><h2>Bonjour, Romain.</h2><p>Suivez la situation financière de votre organisation, même sans connexion.</p></div><button className="primary">+ Nouvelle opération</button></div><div className="stats-grid">{stats.map(s=><Stat key={s.label} label={s.label} value={s.value} note={s.trend}/>)}</div><div className="grid-two"><section className="panel"><div className="panel-head"><div><span className="eyebrow">ACTIVITÉ</span><h3>Flux financiers</h3></div><span className="period">Jan — Déc 2026</span></div><div className="chart"><div className="chart-line line-a"/><div className="chart-line line-b"/><div className="chart-bars">{[42,58,47,70,64,81,55,74,68,88,77,94].map((h,i)=><span key={i} style={{height:`${h}%`}}/>)}</div></div></section><section className="panel"><div className="panel-head"><div><span className="eyebrow">À TRAITER</span><h3>Dernières opérations</h3></div></div><div className="operation-list"><div><span className="operation-icon expense-icon">−</span><div><strong>Achat fournitures</strong><small>PROJ-2026-001 · Aujourd'hui</small></div><b>− 245 000 FCFA</b></div><div><span className="operation-icon revenue-icon">+</span><div><strong>Subvention reçue</strong><small>Global Fund · Hier</small></div><b>+ 4 500 000 FCFA</b></div></div></section></div></section>}
-function App(){const [active,setActive]=useState('dashboard');const [online,setOnline]=useState(false);const title=navigation.find(([,id])=>id===active)?.[0]??'Tableau de bord';return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-mark">F</div><div><strong>Finance Pro</strong><span>Gestion financière ONG</span></div></div><div className="workspace"><span>Organisation active</span><strong>Mon ONG</strong><small>Exercice 2026 · XOF</small></div><nav aria-label="Navigation principale"><small className="nav-label">ESPACE FINANCIER</small>{navigation.map(([label,id])=><button className={active===id?'nav-item active':'nav-item'} key={id} onClick={()=>setActive(id)}><span className="nav-icon">{label.charAt(0)}</span>{label}</button>)}</nav><div className="sidebar-bottom"><div className={online?'sync-card online':'sync-card'}><div><span className="status-dot"/>{online?'Connecté':'Mode hors connexion'}</div><small>{online?'Synchronisation disponible':'Vos données restent disponibles localement'}</small><button onClick={()=>setOnline(v=>!v)}>{online?'Passer hors ligne':'Simuler la connexion'}</button></div><div className="user-card"><div className="avatar">RA</div><div><strong>Romain</strong><span>Administrateur ONG</span></div></div></div></aside><main className="main-content"><header className="topbar"><div><span className="eyebrow">Finance Pro / 2026</span><h1>{title}</h1></div><div className="top-actions"><span className="connection"><i/> {online?'En ligne':'Hors connexion'}</span><button className="icon-button" aria-label="Notifications">●</button><button className="profile-button">RA</button></div></header>{active==='dashboard'?<Dashboard/>:active==='organizations'||active==='access'?<ManagementPage mode={active}/>:active==='projects'?<ProjectsPage/>:active==='expenses'||active==='revenues'?<TransactionsPage mode={active}/>:active==='budget-control'?<BudgetControlPage/>:active==='accounting'?<AccountingPage/>:active==='reports'?<ReportsPage/>:<Dashboard/>}</main></div>}
-export default App;
+const navigation = [
+  { id: 'dashboard', label: 'Tableau de bord', section: 'PILOTAGE' },
+  { id: 'organizations', label: 'Organisations', section: 'ADMINISTRATION' },
+  { id: 'access', label: 'Utilisateurs & rôles', section: 'ADMINISTRATION' },
+  { id: 'projects', label: 'Projets & budgets', section: 'FINANCE' },
+  { id: 'expenses', label: 'Dépenses', section: 'FINANCE' },
+  { id: 'revenues', label: 'Recettes & financements', section: 'FINANCE' },
+  { id: 'budget-control', label: 'Contrôle budgétaire', section: 'FINANCE' },
+  { id: 'accounting', label: 'Comptabilité', section: 'COMPTABILITÉ' },
+  { id: 'reports', label: 'Rapports & analyses', section: 'COMPTABILITÉ' },
+];
+
+function ErrorBoundary({ children }) {
+  return children;
+}
+
+export default function App() {
+  const [active, setActive] = useState('dashboard');
+  const [online, setOnline] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const current = navigation.find(item => item.id === active) || navigation[0];
+  const groups = useMemo(() => [...new Set(navigation.map(item => item.section))], []);
+
+  async function handleLogout() {
+    try { await logout(); } catch (_) { /* local session is still cleared */ }
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.reload();
+  }
+
+  function renderPage() {
+    switch (active) {
+      case 'dashboard': return <DashboardPage />;
+      case 'organizations': return <AdministrationPage section="organizations" />;
+      case 'access': return <AdministrationPage section="access" />;
+      case 'projects': return <ProjectsPage />;
+      case 'expenses': return <ExpenseWorkflowPage />;
+      case 'revenues': return <RevenueWorkflowPage />;
+      case 'budget-control': return <BudgetControlPage />;
+      case 'accounting': return <AccountingPage />;
+      case 'reports': return <ReportsPage />;
+      default: return <DashboardPage />;
+    }
+  }
+
+  return <div className="app-shell">
+    <aside className={mobileOpen ? 'sidebar sidebar-open' : 'sidebar'}>
+      <div className="brand"><div className="brand-mark">F</div><div><strong>Finance Pro</strong><span>Gestion financière ONG</span></div><button className="mobile-close" onClick={() => setMobileOpen(false)}>×</button></div>
+      <div className="workspace"><span>Organisation active</span><strong>Mon ONG</strong><small>Exercice 2026 · XOF</small></div>
+      <nav aria-label="Navigation principale">
+        {groups.map(group => <div className="nav-group" key={group}><small className="nav-label">{group}</small>{navigation.filter(item => item.section === group).map(item => <button key={item.id} className={active === item.id ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(item.id); setMobileOpen(false); }}><span className="nav-icon">{item.label.charAt(0)}</span><span>{item.label}</span></button>)}</div>)}
+      </nav>
+      <div className="sidebar-bottom"><div className={online ? 'sync-card online' : 'sync-card'}><div><span className="status-dot" />{online ? 'Serveur connecté' : 'Mode local'}</div><small>{online ? 'Synchronisation disponible' : 'Les écrans restent consultables localement'}</small><button onClick={() => setOnline(value => !value)}>{online ? 'Passer en mode local' : 'Simuler la connexion'}</button></div><button className="logout-button" onClick={handleLogout}>Se déconnecter</button></div>
+    </aside>
+    <main className="main-content">
+      <header className="topbar"><div className="topbar-left"><button className="mobile-menu" onClick={() => setMobileOpen(true)}>☰</button><div><span className="eyebrow">FINANCE PRO / 2026</span><h1>{current.label}</h1></div></div><div className="top-actions"><span className="connection"><i className={online ? 'connected' : ''} />{online ? 'En ligne' : 'Local'}</span><button className="icon-button" aria-label="Notifications">●</button><button className="profile-button">RA</button></div></header>
+      <ErrorBoundary>{renderPage()}</ErrorBoundary>
+    </main>
+  </div>;
+}

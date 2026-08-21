@@ -9,11 +9,13 @@ import RevenueWorkflowPage from './pages/RevenueWorkflowPage';
 import BudgetControlPage from './pages/BudgetControlPage';
 import AccountingPage from './pages/AccountingPage';
 import ReportsPage from './pages/ReportsPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 
 const navigation = [
   { id: 'dashboard', label: 'Tableau de bord', section: 'PILOTAGE' },
   { id: 'organizations', label: 'Organisations', section: 'ADMINISTRATION' },
   { id: 'access', label: 'Utilisateurs & rôles', section: 'ADMINISTRATION' },
+  { id: 'subscription', label: 'Abonnement & facturation', section: 'ADMINISTRATION' },
   { id: 'projects', label: 'Projets & budgets', section: 'FINANCE' },
   { id: 'expenses', label: 'Dépenses', section: 'FINANCE' },
   { id: 'revenues', label: 'Recettes & financements', section: 'FINANCE' },
@@ -21,10 +23,6 @@ const navigation = [
   { id: 'accounting', label: 'Comptabilité', section: 'COMPTABILITÉ' },
   { id: 'reports', label: 'Rapports & analyses', section: 'COMPTABILITÉ' },
 ];
-
-function ErrorBoundary({ children }) {
-  return children;
-}
 
 export default function App() {
   const [active, setActive] = useState('dashboard');
@@ -44,6 +42,7 @@ export default function App() {
       case 'dashboard': return <DashboardPage />;
       case 'organizations': return <AdministrationPage section="organizations" />;
       case 'access': return <AdministrationPage section="access" />;
+      case 'subscription': return <SubscriptionPage />;
       case 'projects': return <ProjectsPage />;
       case 'expenses': return <ExpenseWorkflowPage />;
       case 'revenues': return <RevenueWorkflowPage />;
@@ -65,7 +64,7 @@ export default function App() {
     </aside>
     <main className="main-content">
       <header className="topbar"><div className="topbar-left"><button className="mobile-menu" onClick={() => setMobileOpen(true)}>☰</button><div><span className="eyebrow">FINANCE PRO / 2026</span><h1>{current.label}</h1></div></div><div className="top-actions"><span className="connection"><i className={online ? 'connected' : ''} />{online ? 'En ligne' : 'Local'}</span><button className="icon-button" aria-label="Notifications">●</button><button className="profile-button">RA</button></div></header>
-      <ErrorBoundary>{renderPage()}</ErrorBoundary>
+      {renderPage()}
     </main>
   </div>;
 }
